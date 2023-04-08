@@ -1,0 +1,139 @@
+{
+  "publisher": "cache",
+  "name": "copy-i18n-key",
+  "displayName": "copyI18nKey",
+  "description": "",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/PRC-Cc/copy-i18n-key"
+  },
+  "version": "0.0.3",
+  "engines": {
+    "vscode": "^1.76.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "copyI18nKey.copyI18nKey",
+        "title": "复制 i18n key"
+      },
+      {
+        "command": "copyI18nKey.translate",
+        "title": "翻译"
+      },
+      {
+        "command": "copyI18nKey.reloadTranslate",
+        "title": "重启翻译"
+      },
+      {
+        "command": "copyI18nKey.gotoI18n_en",
+        "title": "转到i18n英文"
+      },
+      {
+        "command": "copyI18nKey.gotoI18n_zh_TW",
+        "title": "转到i18n繁体"
+      },
+      {
+        "command": "copyI18nKey.gotoI18n_zh_CN",
+        "title": "转到i18n中文"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "copyI18nKey.copyI18nKey",
+          "when": "resourcePath =~ /src\\/i18n\\/.*\\.json$/",
+          "group": "navigation"
+        },
+        {
+          "command": "copyI18nKey.translate",
+          "when": "resourcePath =~ /src\\/i18n\\/.*\\.json$/ && editorHasSelection != '' && copyI18nKey.enableTranslate",
+          "group": "navigation"
+        },
+        {
+          "command": "copyI18nKey.gotoI18n_en",
+          "when": "editorHasSelection != '' && copyI18nKey.enableGotoI18nEn",
+          "group": "navigation@33"
+        },
+        {
+          "command": "copyI18nKey.gotoI18n_zh_TW",
+          "when": "editorHasSelection != '' && copyI18nKey.enableGotoI18nZhTW",
+          "group": "navigation@32"
+        },
+        {
+          "command": "copyI18nKey.gotoI18n_zh_CN",
+          "when": "editorHasSelection != '' && copyI18nKey.enableGotoI18nZhCN",
+          "group": "navigation@31"
+        }
+      ]
+    },
+    "configuration": [
+      {
+        "id": "i18nTranslate",
+        "title": "国际化翻译插件",
+        "order": 1,
+        "properties": {
+          "conf.settingsEditor.bdTranslateSetting": {
+            "type": "object",
+            "order": 1,
+            "description": "百度翻译配置",
+            "properties": {
+              "appID": {
+                "type": "string",
+                "description": "APP ID"
+              },
+              "secretKey": {
+                "type": "string",
+                "description": "密钥"
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run package",
+    "compile": "webpack",
+    "watch": "webpack --watch",
+    "package": "webpack --mode production --devtool hidden-source-map",
+    "compile-tests": "tsc -p . --outDir out",
+    "watch-tests": "tsc -p . -w --outDir out",
+    "pretest": "npm run compile-tests && npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/glob": "^8.1.0",
+    "@types/json-to-ast": "~2.1.2",
+    "@types/md5": "~2.3.2",
+    "@types/mocha": "^10.0.1",
+    "@types/node": "16.x",
+    "@types/vscode": "^1.76.0",
+    "@typescript-eslint/eslint-plugin": "^5.53.0",
+    "@typescript-eslint/parser": "^5.53.0",
+    "@vscode/test-electron": "^2.2.3",
+    "eslint": "^8.34.0",
+    "glob": "^8.1.0",
+    "mocha": "^10.2.0",
+    "ts-loader": "^9.4.2",
+    "typescript": "^4.9.5",
+    "webpack": "^5.75.0",
+    "webpack-cli": "^5.0.1"
+  },
+  "dependencies": {
+    "clipboardy": "~3.0.0",
+    "json-to-ast": "~2.1.0",
+    "md5": "~2.3.0",
+    "node-fetch": "~3.3.1"
+  },
+  "license": "MIT"
+}
