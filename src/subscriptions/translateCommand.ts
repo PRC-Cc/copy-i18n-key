@@ -3,6 +3,7 @@ import fetch from "node-fetch";
 import {
   ExtensionContext,
   Range,
+  Uri,
   ViewColumn,
   WebviewPanel,
   commands,
@@ -15,17 +16,25 @@ import {
   NAME_MAP,
   TRANS_KEYS,
 } from "../constants";
+import { contentGenerator, myScript, header, footer } from "./template";
+import { transform } from "../utils/parse";
 
 const md5 = require("md5");
 
 const pannelKey = `${COMMAND_PREFIX}.translateView`;
-
 class TranslateProvider {
   public static readonly viewType = pannelKey;
   private _view?: WebviewPanel;
+  _extensionUri: Uri;
   context: ExtensionContext;
   constructor(context: ExtensionContext) {
     this.context = context;
+    this._extensionUri = context.extensionUri;
+  }
+  getResourcePath(...paths: string[]) {
+    const resourcePathOnDisk = Uri.joinPath(this._extensionUri, ...paths);
+    const resourceUri = this._view?.webview.asWebviewUri(resourcePathOnDisk);
+    return resourceUri;
   }
   init() {
     if (!this._view) {
@@ -35,6 +44,7 @@ class TranslateProvider {
         ViewColumn.Beside,
         {
           enableScripts: true,
+          retainContextWhenHidden: true,
         }
       );
     }
@@ -47,15 +57,36 @@ class TranslateProvider {
           case "copy":
             clipboard.writeSync(message.text);
             window.showInformationMessage("复制成功");
-            return;
+            break;
+          case "insert":
+            console.log(message.data);
+            this.insert(message.data);
+            break;
+          case "refresh":
+            this.refresh();
+            break;
+          case "translate":
+            this.translate(message.data);
+            break;
         }
       },
       undefined,
       this.context.subscriptions
     );
   }
-  show() {
-    this.init();
+  insert(data: { type: TI18nKey; key: string; value: string }) {
+    transform(data.type, data.key, data.value);
+  }
+  refresh() {
+    let enable = false;
+    const config = getBdTranslateConfig();
+    if (config?.appID && config?.secretKey) {
+      enable = true;
+    }
+    this._view?.webview.postMessage({
+      command: "changeTranslateStatus",
+      data: enable,
+    });
   }
   hide() {
     this._view?.dispose();
@@ -71,28 +102,25 @@ class TranslateProvider {
     const url = `http://api.fanyi.baidu.com/api/trans/vip/translate?q=${q}&from=${from}&to=${to}&appid=${appID}&salt=${salt}&sign=${sign}`;
     return url;
   }
-  async translate(word: string) {
-    if (word === "") {
-      return;
-    }
-    const bdTranslateConfig = getBdTranslateConfig();
-    if (!bdTranslateConfig) {
-      return;
-    }
+  show(word: string) {
     if (!this._view) {
       this.init();
     }
     if (!this._view) {
       return;
     }
-
+    this._view.webview.html = this.gethtml(word);
+  }
+  async translate(word: string) {
     const config = getBdTranslateConfig();
     if (!config) {
-      return null;
+      window.showWarningMessage("翻译配置未设置");
+      return;
     }
     const { appID, secretKey } = config;
     if (!appID || !secretKey) {
-      return null;
+      window.showWarningMessage("翻译配置未设置");
+      return;
     }
 
     const fetchGenerator = (key: TTrans) => {
@@ -107,7 +135,6 @@ class TranslateProvider {
         });
     };
 
-    this._view.webview.html = this.getHtml("loading", word);
     const rs: string[] = [];
     const chainFn = TRANS_KEYS.slice(1).reduce<TTrans | Function>(
       (pre, now) => {
@@ -137,86 +164,57 @@ class TranslateProvider {
     typeof chainFn === "function" &&
       chainFn().then(() => {
         const data: Record<TTrans, string> = rs.reduce((_, now, index) => {
-          _[TRANS_KEYS[index]] = now;
+          _[NAME_MAP[TRANS_KEYS[index]]] = now;
           return _;
         }, {} as any);
-        this._view!.webview.html = this.getHtml("result", word, data);
+
+        this._view?.webview.postMessage({
+          command: "translate",
+          data,
+        });
       });
   }
-  getHtml(
-    type: "loading" | "result",
-    word: string,
-    rs: Record<TTrans, string> = {
-      en: "",
-      cht: "",
+  gethtml(key?: string) {
+    const config = getBdTranslateConfig();
+    const isBdTranslateEnable = Boolean(
+      config && config.appID && config.secretKey
+    );
+
+    let appendScript = "";
+
+    if (key) {
+      appendScript += `$(".inp-key").value = "${key}"`;
     }
-  ) {
-    const copySvgGenerator = (text: string) =>
-      `<svg onclick="copyText(\'${text}\')" t="1680349067141" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="4275" width="64" height="64"><path d="M768 256a85.333333 85.333333 0 0 1 85.333333 85.333333v512a85.333333 85.333333 0 0 1-85.333333 85.333334h-341.333333a85.333333 85.333333 0 0 1-85.333334-85.333334V341.333333a85.333333 85.333333 0 0 1 85.333334-85.333333h341.333333z m0 85.333333h-341.333333v512h341.333333V341.333333z m-128-256a42.666667 42.666667 0 0 1 42.666667 42.666667l-0.042667 42.666667H256l-0.042667 597.333333H213.333333a42.666667 42.666667 0 0 1-42.666666-42.666667V170.666667a85.333333 85.333333 0 0 1 85.333333-85.333334h384z" fill="#000000" p-id="4276"></path></svg>`;
-    let content = `<h2>原文：${word}</h2>`;
-    if (type === "loading") {
-      content += `<h2>翻译中...</h2>`;
-    } else if (type === "result") {
-      content += TRANS_KEYS.map(
-        (i) => `<h2>${NAME_MAP[i]}：${rs[i]}${copySvgGenerator(rs[i])}</h2>`
-      ).join("\n");
+
+    if (appendScript !== "") {
+      appendScript = `<script>${appendScript}</script>`;
     }
-    return `<!DOCTYPE html>
-      <html lang="en">
-      <head>
-        <meta charset="UTF-8">
-        <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Document</title>
-        <style>
-        svg{
-          width: 32px;
-          height: 32px;
-          vertical-align: middle;
-          margin-left: 10px;
-          cursor: pointer;
-        }
-        svg path{
-          fill: #cccccc;
-        }
-        svg:hover path{
-          fill: green;
-        }
-        </style>
-      </head>
-      <body>
-        ${content}
-        <script>
-            const vscode = acquireVsCodeApi();
-            function copyText(text) {
-              if(text){
-                vscode.postMessage({
-                  command: 'copy',
-                  text
-                })
-              }
-            }
-        </script>
-      </body>
-      </html>`;
+
+    return (
+      header +
+      contentGenerator(isBdTranslateEnable) +
+      myScript +
+      appendScript +
+      footer
+    );
   }
 }
 
 export default (context: ExtensionContext) => {
-  return commands.registerCommand(COMMAND_KEYS.translate, () => {
+  return commands.registerCommand(COMMAND_KEYS.addI18n, () => {
     const translateProvider = new TranslateProvider(context);
     const editor = window.activeTextEditor;
     if (!editor) {
       return;
     }
-    if (editor.selection.isEmpty) {
-      window.showWarningMessage("请勾选翻译文本再翻译");
-      return;
-    }
+    // if (editor.selection.isEmpty) {
+    //   window.showWarningMessage("请勾选翻译文本再翻译");
+    //   return;
+    // }
     const { getText } = editor?.document;
     const selectText = getText(
       new Range(editor.selection.anchor, editor.selection.end)
     );
-    translateProvider.translate(selectText);
+    translateProvider.show(selectText);
   });
 };

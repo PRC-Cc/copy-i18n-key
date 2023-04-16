@@ -75,18 +75,6 @@ const getBdTranslateConfig = () => {
   return null;
 };
 
-const configTranlateEnv = () => {
-  const bdTranslateConfig = getBdTranslateConfig();
-  let enable = false;
-  if (bdTranslateConfig) {
-    const { appID, secretKey } = bdTranslateConfig!;
-    if (appID !== "" && secretKey !== "") {
-      enable = true;
-    }
-  }
-  commands.executeCommand("setContext", "copyI18nKey.enableTranslate", enable);
-};
-
 function getParamPosition(fileStr: string, originParamPaths: string[]) {
   const info = parse(fileStr, { loc: true });
   if (info.type !== "Object") {
@@ -159,10 +147,20 @@ const checkEnableI18n = () => {
   }
 };
 
+const checkI18nExists = (i18nKey: TI18nKey) => {
+  const i18nPath =
+    workspace.workspaceFolders?.[0].uri.path + `/src/i18n/${i18nKey}.json`;
+  const isExists = fs.existsSync(i18nPath);
+  return {
+    path: i18nPath,
+    isExists,
+  };
+};
+
 export {
   getSelectKeys,
   getBdTranslateConfig,
-  configTranlateEnv,
   getParamPosition,
   checkEnableI18n,
+  checkI18nExists,
 };

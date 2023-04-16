@@ -22,27 +22,23 @@
     "commands": [
       {
         "command": "copyI18nKey.copyI18nKey",
-        "title": "复制 i18n key"
+        "title": "I18n: 复制key"
       },
       {
-        "command": "copyI18nKey.translate",
-        "title": "翻译"
-      },
-      {
-        "command": "copyI18nKey.reloadTranslate",
-        "title": "重启翻译"
+        "command": "copyI18nKey.addI18n",
+        "title": "I18n: 新增词条"
       },
       {
         "command": "copyI18nKey.gotoI18n_en",
-        "title": "转到i18n英文"
+        "title": "I18n: 转到英文"
       },
       {
         "command": "copyI18nKey.gotoI18n_zh_TW",
-        "title": "转到i18n繁体"
+        "title": "I18n: 转到繁体"
       },
       {
         "command": "copyI18nKey.gotoI18n_zh_CN",
-        "title": "转到i18n中文"
+        "title": "I18n: 转到中文"
       }
     ],
     "menus": {
@@ -50,27 +46,26 @@
         {
           "command": "copyI18nKey.copyI18nKey",
           "when": "resourcePath =~ /src\\/i18n\\/.*\\.json$/",
-          "group": "navigation"
+          "group": "copyI18nKey"
         },
         {
-          "command": "copyI18nKey.translate",
-          "when": "resourcePath =~ /src\\/i18n\\/.*\\.json$/ && editorHasSelection != '' && copyI18nKey.enableTranslate",
-          "group": "navigation"
+          "command": "copyI18nKey.addI18n",
+          "group": "copyI18nKey"
         },
         {
           "command": "copyI18nKey.gotoI18n_en",
           "when": "editorHasSelection != '' && copyI18nKey.enableGotoI18nEn",
-          "group": "navigation@33"
+          "group": "copyI18nKey"
         },
         {
           "command": "copyI18nKey.gotoI18n_zh_TW",
           "when": "editorHasSelection != '' && copyI18nKey.enableGotoI18nZhTW",
-          "group": "navigation@32"
+          "group": "copyI18nKey"
         },
         {
           "command": "copyI18nKey.gotoI18n_zh_CN",
           "when": "editorHasSelection != '' && copyI18nKey.enableGotoI18nZhCN",
-          "group": "navigation@31"
+          "group": "copyI18nKey"
         }
       ]
     },
@@ -112,6 +107,8 @@
     "test": "node ./out/test/runTest.js"
   },
   "devDependencies": {
+    "@babel/core": "^7.21.4",
+    "@types/babel__core": "^7.20.0",
     "@types/glob": "^8.1.0",
     "@types/json-to-ast": "~2.1.2",
     "@types/md5": "~2.3.2",
