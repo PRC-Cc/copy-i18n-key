@@ -7,7 +7,8 @@
     "type": "git",
     "url": "https://github.com/PRC-Cc/copy-i18n-key"
   },
-  "version": "0.0.3",
+  "icon": "logo.png",
+  "version": "0.1.1",
   "engines": {
     "vscode": "^1.76.0"
   },
@@ -39,6 +40,10 @@
       {
         "command": "copyI18nKey.gotoI18n_zh_CN",
         "title": "I18n: 转到中文"
+      },
+      {
+        "command": "copyI18nKey.reloadI18nGoto",
+        "title": "I18n: 重启转到功能"
       }
     ],
     "menus": {
@@ -127,6 +132,7 @@
     "webpack-cli": "^5.0.1"
   },
   "dependencies": {
+    "@babel/preset-typescript": "~7.21.4",
     "clipboardy": "~3.0.0",
     "json-to-ast": "~2.1.0",
     "md5": "~2.3.0",

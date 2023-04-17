@@ -21,6 +21,10 @@ import { transform } from "../utils/parse";
 
 const md5 = require("md5");
 
+export const providerRef: { current: TranslateProvider | undefined } = {
+  current: undefined,
+};
+
 const pannelKey = `${COMMAND_PREFIX}.translateView`;
 class TranslateProvider {
   public static readonly viewType = pannelKey;
@@ -59,7 +63,6 @@ class TranslateProvider {
             window.showInformationMessage("复制成功");
             break;
           case "insert":
-            console.log(message.data);
             this.insert(message.data);
             break;
           case "refresh":
@@ -73,6 +76,9 @@ class TranslateProvider {
       undefined,
       this.context.subscriptions
     );
+    this._view.onDidDispose(() => {
+      providerRef.current = undefined;
+    });
   }
   insert(data: { type: TI18nKey; key: string; value: string }) {
     transform(data.type, data.key, data.value);
@@ -103,13 +109,21 @@ class TranslateProvider {
     return url;
   }
   show(word: string) {
-    if (!this._view) {
-      this.init();
-    }
-    if (!this._view) {
+    if (this._view) {
+      this._view.reveal();
+      if (!word) {
+        return;
+      }
+      this._view.webview.postMessage({
+        command: "changeKey",
+        data: word,
+      });
       return;
     }
-    this._view.webview.html = this.gethtml(word);
+    this.init();
+    if (this._view) {
+      (<WebviewPanel>this._view).webview.html = this.gethtml(word);
+    }
   }
   async translate(word: string) {
     const config = getBdTranslateConfig();
@@ -202,19 +216,17 @@ class TranslateProvider {
 
 export default (context: ExtensionContext) => {
   return commands.registerCommand(COMMAND_KEYS.addI18n, () => {
-    const translateProvider = new TranslateProvider(context);
+    if (!providerRef.current) {
+      providerRef.current = new TranslateProvider(context);
+    }
     const editor = window.activeTextEditor;
     if (!editor) {
       return;
     }
-    // if (editor.selection.isEmpty) {
-    //   window.showWarningMessage("请勾选翻译文本再翻译");
-    //   return;
-    // }
     const { getText } = editor?.document;
     const selectText = getText(
       new Range(editor.selection.anchor, editor.selection.end)
     );
-    translateProvider.show(selectText);
+    providerRef.current.show(selectText);
   });
 };

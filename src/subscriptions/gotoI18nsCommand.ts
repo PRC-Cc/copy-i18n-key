@@ -1,6 +1,6 @@
 import { Range, TextEditor, Uri, commands, window, workspace } from "vscode";
 import { COMMAND_KEYS, I18N_KEYS } from "../constants";
-import { checkI18nExists, getParamPosition } from "../utils";
+import { checkEnableI18n, checkI18nExists, getParamPosition } from "../utils";
 
 const fs = require("node:fs");
 
@@ -14,6 +14,8 @@ const gotoI18nPosition = (
   }
   const { isExists, path } = checkI18nExists(i18nKey);
   if (!isExists) {
+    window.showWarningMessage(`${i18nKey} 文件不存在`);
+    checkEnableI18n();
     return;
   }
   const targetFileStr = fs.readFileSync(path, "utf-8") as string;

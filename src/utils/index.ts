@@ -1,4 +1,12 @@
-import { Position, Range, commands, window, workspace } from "vscode";
+import {
+  FileSystemWatcher,
+  Position,
+  Range,
+  Uri,
+  commands,
+  window,
+  workspace,
+} from "vscode";
 
 const parse = require("json-to-ast");
 const fs = require("node:fs");
@@ -123,27 +131,21 @@ const checkEnableI18n = () => {
     const zhTWPath =
       workspace.workspaceFolders?.[0].uri.path + "/src/i18n/zh_TW.json";
 
-    if (fs.existsSync(enPath)) {
-      commands.executeCommand(
-        "setContext",
-        "copyI18nKey.enableGotoI18nEn",
-        true
-      );
-    }
-    if (fs.existsSync(zhTWPath)) {
-      commands.executeCommand(
-        "setContext",
-        "copyI18nKey.enableGotoI18nZhTW",
-        true
-      );
-    }
-    if (fs.existsSync(zhCNPath)) {
-      commands.executeCommand(
-        "setContext",
-        "copyI18nKey.enableGotoI18nZhCN",
-        true
-      );
-    }
+    commands.executeCommand(
+      "setContext",
+      "copyI18nKey.enableGotoI18nEn",
+      fs.existsSync(enPath)
+    );
+    commands.executeCommand(
+      "setContext",
+      "copyI18nKey.enableGotoI18nZhTW",
+      fs.existsSync(zhTWPath)
+    );
+    commands.executeCommand(
+      "setContext",
+      "copyI18nKey.enableGotoI18nZhCN",
+      fs.existsSync(zhCNPath)
+    );
   }
 };
 
@@ -157,7 +159,33 @@ const checkI18nExists = (i18nKey: TI18nKey) => {
   };
 };
 
+let fileWatcher: FileSystemWatcher | undefined;
+const watchFile = () => {
+  if (!workspace.workspaceFolders) {
+    return;
+  }
+  const workspaceFolder = workspace.workspaceFolders[0];
+  fileWatcher = workspace.createFileSystemWatcher(
+    `${workspaceFolder.uri.fsPath}/src/i18n/*.json`
+  );
+
+  fileWatcher.onDidCreate((uri: Uri) => {
+    checkEnableI18n();
+  });
+
+  fileWatcher.onDidDelete((uri: Uri) => {
+    checkEnableI18n();
+  });
+};
+
+const unWatchFile = () => {
+  fileWatcher?.dispose();
+  fileWatcher = undefined;
+};
+
 export {
+  watchFile,
+  unWatchFile,
   getSelectKeys,
   getBdTranslateConfig,
   getParamPosition,

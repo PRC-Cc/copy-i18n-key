@@ -9,4 +9,5 @@ export const COMMAND_KEYS = {
   copyI18nKey: `${COMMAND_PREFIX}.copyI18nKey`,
   addI18n: `${COMMAND_PREFIX}.addI18n`,
   gotoI18n_: `${COMMAND_PREFIX}.gotoI18n_`,
+  reloadI18nGoto: `${COMMAND_PREFIX}.reloadI18nGoto`,
 };

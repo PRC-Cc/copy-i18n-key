@@ -1,12 +1,7 @@
 import { PluginItem, transformSync } from "@babel/core";
 import * as fs from "fs";
 import { Range, Uri, ViewColumn, window, workspace } from "vscode";
-import { checkI18nExists, getParamPosition } from ".";
-
-/**
- * TODO
- * 1. 有冲突，查找时，位置不对
- */
+import { checkEnableI18n, checkI18nExists, getParamPosition } from ".";
 
 /**
  * 检查json是否冲突
@@ -34,6 +29,7 @@ function checkIsValid(data: Record<string, any>, key: string) {
       findKeys.push(keys.shift());
       temp = current;
     } else {
+      findKeys.push(keys.shift());
       isValid = false;
       break;
     }
@@ -175,6 +171,8 @@ export function transform(i18nKey: TI18nKey, key: string, value: string) {
         fs.writeFileSync(i18nPath, code, {
           encoding: "utf-8",
         });
+        window.showInformationMessage("新增成功");
+        checkEnableI18n();
         jump(i18nPath, key);
       } catch (error) {
         window.showErrorMessage(`写入${i18nKey}文件失败`);
@@ -216,6 +214,7 @@ export function transform(i18nKey: TI18nKey, key: string, value: string) {
     fs.writeFileSync(i18nPath, code, {
       encoding: "utf-8",
     });
+    window.showInformationMessage("新增成功");
     jump(i18nPath, key);
   } catch (error) {
     window.showErrorMessage(`写入${i18nKey}文件失败`);

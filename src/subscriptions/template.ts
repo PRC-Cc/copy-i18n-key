@@ -344,6 +344,8 @@ window.addEventListener('message', event => {
                 }
             }
             break;
+        case 'changeKey':
+            $('.inp-key').value = message.data;
     }
 });
 </script>`;
