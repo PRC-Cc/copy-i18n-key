@@ -8,6 +8,7 @@ import {
   WebviewPanel,
   commands,
   window,
+  workspace,
 } from "vscode";
 import { getBdTranslateConfig } from "../utils";
 import {
@@ -31,6 +32,7 @@ class TranslateProvider {
   private _view?: WebviewPanel;
   _extensionUri: Uri;
   context: ExtensionContext;
+  currentFileName?: string;
   constructor(context: ExtensionContext) {
     this.context = context;
     this._extensionUri = context.extensionUri;
@@ -39,6 +41,9 @@ class TranslateProvider {
     const resourcePathOnDisk = Uri.joinPath(this._extensionUri, ...paths);
     const resourceUri = this._view?.webview.asWebviewUri(resourcePathOnDisk);
     return resourceUri;
+  }
+  setCurrentFileName(filename: string) {
+    this.currentFileName = filename;
   }
   init() {
     if (!this._view) {
@@ -81,7 +86,7 @@ class TranslateProvider {
     });
   }
   insert(data: { type: TI18nKey; key: string; value: string }) {
-    transform(data.type, data.key, data.value);
+    transform(data.type, data.key, data.value, this.currentFileName);
   }
   refresh() {
     let enable = false;
@@ -216,14 +221,17 @@ class TranslateProvider {
 
 export default (context: ExtensionContext) => {
   return commands.registerCommand(COMMAND_KEYS.addI18n, () => {
-    if (!providerRef.current) {
-      providerRef.current = new TranslateProvider(context);
-    }
     const editor = window.activeTextEditor;
     if (!editor) {
       return;
     }
+    if (!providerRef.current) {
+      providerRef.current = new TranslateProvider(context);
+    }
+    providerRef.current.setCurrentFileName(editor.document.fileName);
     const { getText } = editor?.document;
+    const contextPath = workspace.workspaceFolders?.[0].uri.path;
+
     const selectText = getText(
       new Range(editor.selection.anchor, editor.selection.end)
     );

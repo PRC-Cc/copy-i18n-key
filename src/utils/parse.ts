@@ -161,8 +161,17 @@ function jump(path: string, key: string) {
   });
 }
 
-export function transform(i18nKey: TI18nKey, key: string, value: string) {
-  const { isExists, path: i18nPath } = checkI18nExists(i18nKey);
+export function transform(
+  i18nKey: TI18nKey,
+  key: string,
+  value: string,
+  currentFileName?: string
+) {
+  const { isExists, path: i18nPath } = checkI18nExists(
+    i18nKey,
+    currentFileName
+  );
+  const editor = window.activeTextEditor;
   // 不存在，新建
   if (!isExists) {
     const { success, code } = parse("{}", i18nKey, key, value);

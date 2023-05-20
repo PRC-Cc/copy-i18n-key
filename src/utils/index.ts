@@ -149,10 +149,28 @@ const checkEnableI18n = () => {
   }
 };
 
-const checkI18nExists = (i18nKey: TI18nKey) => {
-  const i18nPath =
-    workspace.workspaceFolders?.[0].uri.path + `/src/i18n/${i18nKey}.json`;
-  const isExists = fs.existsSync(i18nPath);
+const checkI18nExists = (i18nKey: TI18nKey, filename?: string) => {
+  let i18nPath = "";
+  let isExists = false;
+  const relativePath = `/src/i18n/${i18nKey}.json`;
+
+  if (filename) {
+    const srcRef = /(.*)\/src\/.*/;
+    if (filename.includes("/src/") && srcRef.test(filename)) {
+      i18nPath = filename.replace(srcRef, `$1${relativePath}`);
+      isExists = fs.existsSync(i18nPath);
+    }
+    const srcRef2 = /(.*)\/.*/;
+    if (!isExists && srcRef2.test(filename)) {
+      i18nPath = filename.replace(srcRef2, `$1${relativePath}`);
+      isExists = fs.existsSync(i18nPath);
+    }
+  }
+
+  if (!isExists) {
+    i18nPath = workspace.workspaceFolders?.[0].uri.path + relativePath;
+    isExists = fs.existsSync(i18nPath);
+  }
   return {
     path: i18nPath,
     isExists,
